@@ -3,17 +3,17 @@
 @layer base {
   body {
     @apply bg-[#020617] text-slate-100 antialiased font-sans m-0 p-0;
-    /* Use your image here. Put the file in the 'public' folder */
+    
     background-image: url('/mapua-campus-bg.jpg'); 
     background-size: cover;
     background-attachment: fixed;
     background-position: center;
   }
 
-  /* This creates the 'transparent' effect so the text stays sharp */
+  
   body::before {
     content: "";
-    @apply fixed inset-0 bg-black/80 z-[-1]; /* Adjust 80 to change transparency */
+    @apply fixed inset-0 bg-black/80 z-[-1]; 
     background: linear-gradient(to bottom, rgba(2, 6, 23, 0.85), rgba(153, 27, 27, 0.2));
   }
 }

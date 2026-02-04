@@ -18,21 +18,21 @@ export default function App() {
     if (file) {
       setLogFileName(file.name);
       Papa.parse(file, {
-        header: false, // Reading as raw rows to handle the 7-row header
+        header: false, 
         skipEmptyLines: true,
         complete: (results: ParseResult<any[]>) => {
           const counts: TallyMap = {};
           let logDate = "";
 
-          // Data starts at index 8 (Row 9 in Excel)
+          
           const dataRows = results.data.slice(8);
 
           dataRows.forEach(row => {
-            // Column Index 4 is "Date" (DD/MM/YYYY)
+            
             const dateStr = row[4];
             if (dateStr && !logDate) logDate = dateStr;
 
-            // Column Index 5 is "Program" (IT, CS, etc.)
+           
             const prog = String(row[5] || "").trim().toUpperCase();
             if (prog) {
               counts[prog] = (counts[prog] || 0) + 1;
@@ -46,7 +46,7 @@ export default function App() {
     }
   };
 
-  // 2. Load Master File Template (Clean Master FIle.csv)
+  
   const handleMasterUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -57,17 +57,17 @@ export default function App() {
     }
   };
 
-  // 3. Smart Injection & Download
+  
   const processAndDownload = () => {
     if (masterRows.length === 0 || !detectedDate) return alert("Please upload both files!");
 
     const newSheet = masterRows.map(row => [...row]);
     
-    // Extract the DAY from DD/MM/YYYY (e.g., "01" from "01/12/2025")
+    
     const dayValue = parseInt(detectedDate.split('/')[0]);
     let dateColIndex = -1;
 
-    // Search Row 1 for the column matching our day (1.0, 2.0, etc.)
+    
     const headerRow = newSheet[1];
     if (headerRow) {
       dateColIndex = headerRow.findIndex(cell => parseFloat(cell) === dayValue);
@@ -75,7 +75,7 @@ export default function App() {
 
     if (dateColIndex === -1) return alert(`Date column for day ${dayValue} not found in Master File.`);
 
-    // Inject Tally into the Master rows
+   
     newSheet.forEach((row, rowIndex) => {
       const masterProg = String(row[0] || "").trim().toUpperCase();
       Object.entries(tallies).forEach(([logProg, count]) => {
@@ -85,7 +85,7 @@ export default function App() {
       });
     });
 
-    // Trigger Download
+    
     const csv = Papa.unparse(newSheet);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
