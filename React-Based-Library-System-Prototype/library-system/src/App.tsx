@@ -22,8 +22,7 @@ export default function App() {
         complete: (results: ParseResult<any[]>) => {
           const rawData = results.data;
           
-          // 1. DYNAMIC HEADER DETECTION
-          // We search the first 15 rows to find which row is the header
+          
           let headerRowIndex = rawData.findIndex(row => 
             row.some((cell: any) => String(cell).toLowerCase().includes('program'))
           );
@@ -34,7 +33,7 @@ export default function App() {
           const progIdx = headerRow.findIndex((c: any) => String(c).toLowerCase().includes('program'));
           const dateIdx = headerRow.findIndex((c: any) => String(c).toLowerCase().includes('date'));
 
-          // 2. DATA EXTRACTION
+         
           const counts: TallyMap = {};
           let logDate = "";
           const dataRows = rawData.slice(headerRowIndex + 1);
@@ -56,7 +55,7 @@ export default function App() {
     }
   };
 
-  // ... (handleMasterUpload remains similar, but we'll apply the same logic)
+ 
   const handleMasterUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -72,10 +71,10 @@ export default function App() {
     
     const newSheet = masterRows.map(row => [...row]);
     
-    // Extract Day (Supports both MM/DD/YYYY and DD/MM/YYYY)
+    
     const dayValue = parseInt(detectedDate.includes('/') ? detectedDate.split('/')[0] : detectedDate.split('-')[0]);
     
-    // DYNAMIC COLUMN SEARCH in Master
+    
     let dateColIndex = -1;
     for (let r = 0; r < Math.min(newSheet.length, 5); r++) {
       dateColIndex = newSheet[r].findIndex(cell => parseFloat(cell) === dayValue);
@@ -84,7 +83,7 @@ export default function App() {
 
     if (dateColIndex === -1) return alert(`Day ${dayValue} column not found in Master.`);
 
-    // DYNAMIC ROW SEARCH for Programs
+    
     newSheet.forEach((row, rowIndex) => {
       const masterProg = String(row[0] || "").trim().toUpperCase();
       if (tallies[masterProg]) {
@@ -92,7 +91,7 @@ export default function App() {
       }
     });
 
-    // Generate & Download
+   
     const csv = Papa.unparse(newSheet);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
