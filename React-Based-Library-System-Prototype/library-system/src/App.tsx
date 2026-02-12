@@ -608,7 +608,7 @@ export default function App() {
                 >
                   {value}
                 </div>
-                <div className="text-xs mt-1" style={{ color: "#555" }}>{label}</div>
+                <div className="text-xs mt-1" style={{ color: "#f9f6f6" }}>{label}</div>
               </div>
             ))}
           </div>
