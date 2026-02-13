@@ -167,9 +167,9 @@ const recomputeProgramTotals = (sheet: Row[]): void => {
 
   for (let r = HEADER_ROW + 1; r < sheet.length; r++) {
     const label = String(sheet[r][0] || "").trim().toUpperCase();
-    
-    if (label === "SUMMARY" || label === "TIME") break;
    
+    if (label === "SUMMARY" || label === "TIME") break;
+ 
     if (!label || label === "TOTAL") continue;
 
     let sum = 0;
@@ -285,7 +285,7 @@ export default function App() {
   const [dateRange,         setDateRange]         = useState<{ start: string; end: string }>({ start: "", end: "" });
   const [activeTab,         setActiveTab]         = useState<"programs" | "time">("programs");
 
-  
+ 
   const handleLogUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -298,7 +298,7 @@ export default function App() {
       return alert((err as Error)?.message ?? String(err));
     }
 
-    
+
     const headerIdx = rawData.findIndex(
       (row) =>
         row?.some((c) => String(c).toLowerCase().includes("program")) &&
@@ -321,12 +321,12 @@ export default function App() {
       const prog = normalizeProgram(row?.[progIdx]);
       if (!iso || !prog || prog === "PROGRAM") return;
 
-     
+
       if (!countsByDate[iso]) countsByDate[iso] = {};
       countsByDate[iso][prog] = (countsByDate[iso][prog] || 0) + 1;
       seen.add(iso);
 
-      
+  
       if (timeIdx !== -1) {
         const slot = hourToSlotKey(parseHour(row?.[timeIdx]));
         if (slot) {
@@ -347,7 +347,7 @@ export default function App() {
     setTimeTallies(first ? timeCountsByDate[first] || {} : {});
   };
 
-  
+
   const handleMasterUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -355,7 +355,7 @@ export default function App() {
 
     let rows: Row[];
     try {
-      
+   
       rows = await parseFileToRows(file, false);
     } catch (err) {
       return alert((err as Error)?.message ?? String(err));
@@ -369,7 +369,7 @@ export default function App() {
     setTimeTallies(timeTalliesByDate[iso] || {});
   };
 
-  
+ 
   const buildFilledSheet = (
     days: string[]
   ): { newSheet: Row[]; missing: number[] } => {
@@ -384,14 +384,14 @@ export default function App() {
       const progMap: TallyMap = talliesByDate[iso]     || {};
       const timeMap: TallyMap = timeTalliesByDate[iso] || {};
 
-      
+
       const slotOccurrenceSeen: Record<string, number> = {};
 
       newSheet.forEach((row, rowIndex) => {
         const rawLabel = String(row[0] || "").trim();
         const labelUp  = rawLabel.toUpperCase();
 
-        
+ 
         if (
           !rawLabel ||
           labelUp === "PROGRAM" ||
@@ -400,14 +400,14 @@ export default function App() {
           labelUp === "TOTAL"
         ) return;
 
-       
+      
         const isTimeSlot = Object.values(HOUR_TO_SLOT).some(
           (s) => s.replace("_EVE", "") === rawLabel
         );
 
         if (isTimeSlot) {
           slotOccurrenceSeen[rawLabel] = (slotOccurrenceSeen[rawLabel] || 0) + 1;
-          
+        
           const slotKey =
             slotOccurrenceSeen[rawLabel] === 1
               ? rawLabel
@@ -418,21 +418,21 @@ export default function App() {
           return;
         }
 
-        
+  
         const masterProg = normalizeProgram(rawLabel);
         const count = progMap[masterProg] ?? 0;
         if (count) newSheet[rowIndex][dateColIndex] = count;
       });
     });
 
-   
+
     recomputeProgramTotals(newSheet);
     recomputeTimeTotals(newSheet);
 
     return { newSheet, missing };
   };
 
- 
+  
   const processAndDownload = () => {
     if (masterRows.length === 0 || !detectedDate)
       return alert("Upload both files first.");
@@ -444,7 +444,7 @@ export default function App() {
     downloadCSV(newSheet, `Library_Mapua_Report_${dayFromISO(detectedDate)}.csv`);
   };
 
- 
+  
   const processAndDownloadRange = () => {
     if (masterRows.length === 0) return alert("Upload the Master Template first.");
     if (!dateRange.start || !dateRange.end) return alert("Pick a start and end date.");
@@ -466,7 +466,7 @@ export default function App() {
     );
   };
 
-
+  
   const downloadMasterRangeOnly = () => {
     if (masterRows.length === 0) return alert("Upload the Master Template first.");
     if (!dateRange.start || !dateRange.end) return alert("Pick a start and end date.");
@@ -490,7 +490,7 @@ export default function App() {
     );
   };
 
-
+ 
   const totalStudents = Object.values(tallies).reduce((a, b) => a + b, 0);
 
   const totalInRange =
@@ -504,11 +504,11 @@ export default function App() {
 
   const peakTimeSlot = Object.entries(timeTallies).sort((a, b) => b[1] - a[1])[0];
 
- 
+  
   return (
     <div className="min-h-screen relative" style={{ fontFamily: "'Georgia', serif" }}>
 
-     
+  
       <div
         className="fixed inset-0"
         style={{
@@ -518,9 +518,9 @@ export default function App() {
           backgroundRepeat: "no-repeat",
         }}
       />
-     
+   
       <div className="fixed inset-0" style={{ background: "rgba(5,5,12,0.82)" }} />
-     
+    
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
@@ -533,7 +533,7 @@ export default function App() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
 
-      
+ 
         <header className="mb-10 pb-6 border-b border-red-900/30">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
@@ -548,7 +548,7 @@ export default function App() {
                   className="text-xs tracking-[0.4em] uppercase"
                   style={{ color: "#e2b04a" }}
                 >
-                  Mapua Makati Lirary
+                  Mapua Makati Library
                 </span>
               </div>
               <h1
@@ -566,17 +566,17 @@ export default function App() {
               style={{
                 background: "rgba(255,255,255,0.03)",
                 border: "1px solid rgba(255,255,255,0.07)",
-                color: "#666",
+                color: "#ffffff",
                 fontFamily: "'Courier New', monospace",
               }}
             >
               <Heart size={10} fill="#dc2626" className="text-red-600" />
-              Developed by Group 7
+              Developed by Acpal, Argueza, Francisco III, Aquino, Lauguico
             </div>
           </div>
         </header>
 
-       
+     
         {(totalStudents > 0 || availableDates.length > 0) && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
             {(
@@ -608,7 +608,7 @@ export default function App() {
                 >
                   {value}
                 </div>
-                <div className="text-xs mt-1" style={{ color: "#f9f6f6" }}>{label}</div>
+                <div className="text-xs mt-1" style={{ color: "#ffffff" }}>{label}</div>
               </div>
             ))}
           </div>
@@ -616,10 +616,10 @@ export default function App() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        
+     
           <div className="lg:col-span-4 space-y-5">
 
-           
+        
             <div
               className="rounded-2xl p-6"
               style={{
@@ -639,7 +639,7 @@ export default function App() {
                 File Inputs
               </h2>
               <div className="space-y-4">
-             
+       
                 <label className="block cursor-pointer group">
                   <span
                     className="text-xs uppercase tracking-widest"
@@ -670,7 +670,7 @@ export default function App() {
                   <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleLogUpload} />
                 </label>
 
-           
+    
                 <label className="block cursor-pointer group">
                   <span
                     className="text-xs uppercase tracking-widest"
@@ -703,8 +703,8 @@ export default function App() {
               </div>
             </div>
 
-         
-            {availableDates.length > 1 && (
+    
+            {availableDates.length > 0 && (
               <div
                 className="rounded-2xl p-6"
                 style={{
@@ -713,33 +713,123 @@ export default function App() {
                   backdropFilter: "blur(12px)",
                 }}
               >
-                <h2
-                  className="text-xs uppercase tracking-widest mb-4"
-                  style={{ color: "#888", fontFamily: "'Courier New', monospace" }}
-                >
-                  Preview Date
-                </h2>
-                <div className="flex flex-wrap gap-2">
-                  {availableDates.map((iso) => (
-                    <button
-                      key={iso}
-                      onClick={() => handleDateSelect(iso)}
-                      className="px-3 py-1.5 rounded-lg text-xs transition-all"
+                <div className="flex items-center justify-between mb-4">
+                  <h2
+                    className="text-xs uppercase tracking-widest"
+                    style={{ color: "#888", fontFamily: "'Courier New', monospace" }}
+                  >
+                    Preview Date
+                  </h2>
+                  {detectedDate && (
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-md"
                       style={{
+                        background: "rgba(220,38,38,0.15)",
+                        color: "#f87171",
                         fontFamily: "'Courier New', monospace",
-                        background: detectedDate === iso ? "rgba(220,38,38,0.25)" : "rgba(255,255,255,0.04)",
-                        border: `1px solid ${detectedDate === iso ? "rgba(220,38,38,0.6)" : "rgba(255,255,255,0.07)"}`,
-                        color: detectedDate === iso ? "#f87171" : "#666",
+                        border: "1px solid rgba(220,38,38,0.3)",
                       }}
                     >
-                      {iso.split("-").slice(1).join("/")}
-                    </button>
-                  ))}
+                      {detectedDate}
+                    </span>
+                  )}
                 </div>
+
+                {(() => {
+           
+                  const byMonth: Record<string, string[]> = {};
+                  availableDates.forEach((iso) => {
+                    const key = iso.slice(0, 7);
+                    if (!byMonth[key]) byMonth[key] = [];
+                    byMonth[key].push(iso);
+                  });
+                  const monthKeys = Object.keys(byMonth).sort();
+                  const MONTH_NAMES = [
+                    "Jan","Feb","Mar","Apr","May","Jun",
+                    "Jul","Aug","Sep","Oct","Nov","Dec",
+                  ];
+                  const selectedMonth = detectedDate ? detectedDate.slice(0, 7) : monthKeys[0];
+                  const daysInSelectedMonth = byMonth[selectedMonth] || [];
+
+                  return (
+                    <>
+           
+                      <div
+                        className="flex gap-1 mb-3 overflow-x-auto pb-1"
+                        style={{ scrollbarWidth: "none" }}
+                      >
+                        {monthKeys.map((mk) => {
+                          const [y, m] = mk.split("-");
+                          const label = `${MONTH_NAMES[+m - 1]} '${y.slice(2)}`;
+                          const isActive = mk === selectedMonth;
+                          return (
+                            <button
+                              key={mk}
+                              onClick={() => {
+                 
+                                const first = byMonth[mk][0];
+                                handleDateSelect(first);
+                              }}
+                              className="shrink-0 px-3 py-1.5 rounded-lg text-xs transition-all"
+                              style={{
+                                fontFamily: "'Courier New', monospace",
+                                background: isActive
+                                  ? "rgba(220,38,38,0.22)"
+                                  : "rgba(255,255,255,0.04)",
+                                border: `1px solid ${isActive ? "rgba(220,38,38,0.55)" : "rgba(255,255,255,0.07)"}`,
+                                color: isActive ? "#f87171" : "#555",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+    
+                      <div className="grid grid-cols-7 gap-1">
+                        {daysInSelectedMonth.map((iso) => {
+                          const day = +iso.split("-")[2];
+                          const isSelected = iso === detectedDate;
+                          return (
+                            <button
+                              key={iso}
+                              onClick={() => handleDateSelect(iso)}
+                              className="rounded-md py-1.5 text-xs font-bold transition-all"
+                              style={{
+                                fontFamily: "'Courier New', monospace",
+                                background: isSelected
+                                  ? "rgba(220,38,38,0.3)"
+                                  : "rgba(255,255,255,0.04)",
+                                border: `1px solid ${isSelected ? "rgba(220,38,38,0.7)" : "rgba(255,255,255,0.06)"}`,
+                                color: isSelected ? "#fff" : "#555",
+                                boxShadow: isSelected
+                                  ? "0 0 8px rgba(220,38,38,0.3)"
+                                  : "none",
+                              }}
+                            >
+                              {day}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+               
+                      <p
+                        className="text-xs mt-3"
+                        style={{ color: "#444", fontFamily: "'Courier New', monospace" }}
+                      >
+                        {daysInSelectedMonth.length} day{daysInSelectedMonth.length !== 1 ? "s" : ""} with data
+                        {monthKeys.length > 1 && ` · ${monthKeys.length} months total`}
+                      </p>
+                    </>
+                  );
+                })()}
               </div>
             )}
 
-        
+          
             <div
               className="rounded-2xl p-6"
               style={{
@@ -851,7 +941,7 @@ export default function App() {
             )}
           </div>
 
-       
+      
           <div className="lg:col-span-8">
             <div
               className="rounded-2xl overflow-hidden h-full"
@@ -862,7 +952,7 @@ export default function App() {
                 minHeight: "520px",
               }}
             >
-        
+          
               <div
                 className="px-8 py-5 flex items-center justify-between"
                 style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
@@ -928,11 +1018,11 @@ export default function App() {
                 </div>
               </div>
 
-           
+            
               <div className="p-8 overflow-y-auto" style={{ maxHeight: "580px" }}>
                 {activeTab === "programs" && Object.keys(tallies).length > 0 ? (
                   <>
-                
+              
                     <div className="mb-6 space-y-2">
                       {Object.entries(tallies)
                         .sort((a, b) => b[1] - a[1])
@@ -972,7 +1062,7 @@ export default function App() {
                         })}
                     </div>
 
-              
+                  
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {Object.entries(tallies)
                         .sort((a, b) => b[1] - a[1])
@@ -1003,7 +1093,7 @@ export default function App() {
                     <div className="space-y-2">
                       {Object.entries(timeTallies)
                         .sort((a, b) => {
-                      
+                        
                           const toSort = (k: string) => {
                             const h = parseInt(k.replace("_EVE", ""));
                             return k.endsWith("_EVE") ? h + 100 : h;
@@ -1058,7 +1148,7 @@ export default function App() {
                 )}
               </div>
 
-        
+             
               {totalInRange > 0 && (
                 <div
                   className="px-8 py-4 flex items-center justify-between"
