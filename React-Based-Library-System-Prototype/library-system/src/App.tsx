@@ -407,7 +407,7 @@ export default function App() {
   // Monthly analytics state
   const [viewMode, setViewMode] = useState<"daily" | "monthly">("daily");
   const [selectedMonth, setSelectedMonth] = useState<string>("");
-  const [selectedDay, setSelectedDay] = useState<string>(""); // NEW: for day selection
+  const [selectedDay, setSelectedDay] = useState<string>("");
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   
   // Student ranking state
@@ -416,7 +416,7 @@ export default function App() {
   const [rankingTopN, setRankingTopN] = useState<number>(10);
   const [rankings, setRankings] = useState<StudentRanking[]>([]);
   
-  // NEW: Export error window toggle
+  // Export error window toggle
   const [exportErrorWindow, setExportErrorWindow] = useState(false);
   
   // Hourly analytics state
@@ -502,7 +502,7 @@ export default function App() {
     computeMonthlyData(countsByDate, timeCountsByDate);
 
     const first = sorted[0] || "";
-    setSelectedDay(first); // Set selected day on upload
+    setSelectedDay(first);
   };
 
   // Compute monthly analytics
@@ -513,7 +513,7 @@ export default function App() {
     const monthMap: Record<string, MonthlyData> = {};
 
     Object.keys(countsByDate).forEach((date) => {
-      const month = date.slice(0, 7); // YYYY-MM
+      const month = date.slice(0, 7);
       if (!monthMap[month]) {
         monthMap[month] = {
           month,
@@ -523,13 +523,11 @@ export default function App() {
         };
       }
 
-      // Aggregate programs
       Object.entries(countsByDate[date]).forEach(([prog, count]) => {
         monthMap[month].programs[prog] = (monthMap[month].programs[prog] || 0) + count;
         monthMap[month].totalStudents += count;
       });
 
-      // Aggregate timeslots
       if (timeCountsByDate[date]) {
         Object.entries(timeCountsByDate[date]).forEach(([slot, count]) => {
           monthMap[month].timeslots[slot] = (monthMap[month].timeslots[slot] || 0) + count;
@@ -539,7 +537,7 @@ export default function App() {
 
     const sorted = Object.values(monthMap).sort((a, b) => b.month.localeCompare(a.month));
     setMonthlyData(sorted);
-    if (sorted.length > 0) setSelectedMonth(sorted[0].month); // NEW: set default month
+    if (sorted.length > 0) setSelectedMonth(sorted[0].month);
   };
 
   // Compute student rankings
@@ -555,39 +553,32 @@ export default function App() {
     const currentMonth = now.getMonth() + 1;
 
     if (rankingPeriod === "month") {
-      // Filter for the current calendar month
       dateFilter = (date) => {
         const [year, month] = date.split('-').map(Number);
         return year === currentYear && month === currentMonth;
       };
     } else if (rankingPeriod === "semester") {
-      // 4 months from now backwards
       const fourMonthsAgo = new Date(now);
       fourMonthsAgo.setMonth(fourMonthsAgo.getMonth() - 4);
       const cutoff = toISODate(fourMonthsAgo);
       dateFilter = (date) => cutoff ? date >= cutoff : true;
     } else {
-      // year - last 12 months
       const oneYearAgo = new Date(now);
       oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
       const cutoff = toISODate(oneYearAgo);
       dateFilter = (date) => cutoff ? date >= cutoff : true;
     }
 
-    // Filter entries by date
     const filteredEntries = studentEntries.filter((e) => dateFilter(e.date));
 
-    // If no entries match, try showing data from latest available month
     let entriesToUse = filteredEntries;
     if (filteredEntries.length === 0 && rankingPeriod === "month") {
-      // Fall back to the latest month in the data
       const latestMonth = monthlyData.length > 0 ? monthlyData[0].month : null;
       if (latestMonth) {
         entriesToUse = studentEntries.filter((e) => e.date.startsWith(latestMonth));
       }
     }
 
-    // Count unique days per student
     const studentDays: Record<string, Set<string>> = {};
     const studentNames: Record<string, string> = {};
 
@@ -599,7 +590,6 @@ export default function App() {
       studentDays[entry.studentNumber].add(entry.date);
     });
 
-    // Create rankings
     const ranked: StudentRanking[] = Object.keys(studentDays).map((studentNumber) => ({
       studentNumber,
       studentName: studentNames[studentNumber] || "Unknown",
@@ -625,7 +615,6 @@ export default function App() {
     }
 
     const filtered = studentEntries.filter((entry) => {
-      // Extract hour from the timestamp Date object (more reliable)
       const hour = entry.timestamp.getHours();
       return hour === selectedHour && entry.date === selectedDay;
     });
@@ -653,11 +642,12 @@ export default function App() {
     const newSheet: Row[] = masterRows.map((row) => [...row]);
     const missing: number[] = [];
 
-    // NEW: Apply error window if needed - create filtered tallies without mutating state
     let workingTallies = talliesByDate;
     let workingTimeTallies = timeTalliesByDate;
 
+    // CORRECTED: Apply error window by counting ONLY filtered entries
     if (applyErrorWindow && studentEntries.length > 0) {
+      // Step 1: Filter entries to only include one per student per day (30-min window)
       const filtered: StudentEntry[] = [];
       const lastEntry: Record<string, Date> = {};
 
@@ -673,23 +663,62 @@ export default function App() {
         }
       });
 
-      // Recompute tallies with filtered entries (local copy, don't mutate state)
-      const newTallies: DateTallyMap = {};
+      // Step 2: Build time tallies FIRST by directly counting filtered entries
       const newTimeTallies: DateTallyMap = {};
-
       filtered.forEach((entry) => {
-        if (!newTallies[entry.date]) newTallies[entry.date] = {};
-        if (!newTimeTallies[entry.date]) newTimeTallies[entry.date] = {};
+        const iso = entry.date;
+        const hour = entry.timestamp.getHours();
+        const slotKey = hourToSlotKey(hour);
 
-        // Infer program and time from original tallies (fallback)
-        if (talliesByDate[entry.date]) {
-          Object.entries(talliesByDate[entry.date]).forEach(([prog, count]) => {
-            newTallies[entry.date][prog] = (newTallies[entry.date][prog] || 0) + (count / (studentEntries.filter(e => e.date === entry.date).length || 1));
+        if (slotKey) {
+          if (!newTimeTallies[iso]) newTimeTallies[iso] = {};
+          newTimeTallies[iso][slotKey] = (newTimeTallies[iso][slotKey] || 0) + 1;
+        }
+      });
+
+      // Step 3: Build program tallies by distributing filtered entries proportionally
+      const newTallies: DateTallyMap = {};
+      filtered.forEach((entry) => {
+        const iso = entry.date;
+        
+        if (talliesByDate[iso]) {
+          const dayTotal = Object.values(talliesByDate[iso]).reduce((a, b) => a + b, 0);
+          Object.keys(talliesByDate[iso]).forEach((prog) => {
+            if (!newTallies[iso]) newTallies[iso] = {};
+            const proportion = talliesByDate[iso][prog] / dayTotal;
+            newTallies[iso][prog] = (newTallies[iso][prog] || 0) + proportion;
           });
         }
       });
 
-      // Use filtered tallies for this export only
+      // Step 4: Round and normalize programs to match time totals exactly
+      Object.keys(newTallies).forEach((date) => {
+        // Round all program values
+        Object.keys(newTallies[date]).forEach((prog) => {
+          newTallies[date][prog] = Math.round(newTallies[date][prog]);
+        });
+        
+        // Force program total to equal time total
+        const dayProgramTotal = Object.values(newTallies[date]).reduce((a, b) => a + b, 0);
+        const dayTimeTotal = Object.values(newTimeTallies[date] || {}).reduce((a, b) => a + b, 0);
+        
+        if (dayProgramTotal !== dayTimeTotal && dayProgramTotal > 0) {
+          // Adjust the largest program to absorb the difference
+          const difference = dayTimeTotal - dayProgramTotal;
+          const largestProgEntry = Object.entries(newTallies[date]).reduce((a, b) => (b[1] > a[1] ? b : a));
+          if (largestProgEntry) {
+            newTallies[date][largestProgEntry[0]] += difference;
+          }
+        }
+      });
+
+      // Round time values
+      Object.keys(newTimeTallies).forEach((date) => {
+        Object.keys(newTimeTallies[date]).forEach((slot) => {
+          newTimeTallies[date][slot] = Math.round(newTimeTallies[date][slot]);
+        });
+      });
+
       workingTallies = newTallies;
       workingTimeTallies = newTimeTallies;
     }
@@ -708,7 +737,7 @@ export default function App() {
         const labelUp = rawLabel.toUpperCase();
         if (!rawLabel || labelUp === "PROGRAM" || labelUp === "SUMMARY" || labelUp === "TIME" || labelUp === "TOTAL") return;
         
-        // Check if this is a time slot by matching the label with our time slot display names
+        // Check if this is a time slot
         let matchedSlotKey: string | null = null;
         for (const slotKey of Object.values(HOUR_TO_SLOT)) {
           if (slotKey === rawLabel) {
@@ -718,7 +747,6 @@ export default function App() {
         }
         
         if (matchedSlotKey) {
-          // This is a time slot
           const count = timeMap[matchedSlotKey] ?? 0;
           if (count) newSheet[rowIndex][dateColIndex] = count;
           return;
@@ -771,7 +799,6 @@ export default function App() {
     ? monthlyData.find((m) => m.month === selectedMonth)
     : null;
 
-  // Get data for selected day
   const currentDayData = viewMode === "daily" && selectedDay ? {
     date: selectedDay,
     programs: talliesByDate[selectedDay] || {},
@@ -875,7 +902,6 @@ export default function App() {
                   </button>
                 </div>
 
-                {/* NEW: Day selector for daily mode */}
                 {viewMode === "daily" && (
                   <div>
                     <label className="text-xs text-gray-400 mb-2 block">Select Day</label>
@@ -893,7 +919,6 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Month selector for monthly mode */}
                 {viewMode === "monthly" && monthlyData.length > 0 && (
                   <div>
                     <label className="text-xs text-gray-400 mb-2 block">Select Month</label>
@@ -1016,7 +1041,6 @@ export default function App() {
                   Export Single Date
                 </h2>
                 
-                {/* NEW: Error window toggle for export */}
                 <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/10">
                   <input
                     type="checkbox"
@@ -1058,7 +1082,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* NEW: Error window toggle for range export */}
               <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/10">
                 <input
                   type="checkbox"
@@ -1244,7 +1267,7 @@ export default function App() {
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                       <Users className="text-purple-500" />
-                      Students at {HOUR_TO_SLOT[selectedHour]?.replace("_EVE", "")}
+                      Students at {HOUR_TO_SLOT[selectedHour]}
                     </h2>
                     <button onClick={() => setShowHourly(false)} className="text-gray-400 hover:text-white">✕</button>
                   </div>
